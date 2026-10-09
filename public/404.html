@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ONYX Research</title>
+    <script>
+      // SPA fallback for static hosts (GitHub Pages, Surge, etc.)
+      // Saves the full URL into sessionStorage then redirects to /,
+      // where the React app reads it and restores the original path.
+      var l = window.location;
+      sessionStorage.setItem(
+        "spa_redirect",
+        l.pathname.slice(1) + (l.search ? "&" + l.search.slice(1) : "") + l.hash,
+      );
+      l.replace(l.protocol + "//" + l.host + "/");
+    </script>
+  </head>
+  <body></body>
+</html>
