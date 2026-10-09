@@ -20,10 +20,14 @@ type Props = {
   alt: string;
   /** Overlay content (badges) rendered above the image. */
   children?: ReactNode;
+  /** Replaces the default frame (border, radius, background). */
+  frameClassName?: string;
+  frameStyle?: React.CSSProperties;
+  imgClassName?: string;
 };
 
 /** Product image that magnifies under the cursor, following the pointer. */
-export function ProductImageZoom({ src, alt, children }: Props) {
+export function ProductImageZoom({ src, alt, children, frameClassName, frameStyle, imgClassName }: Props) {
   const finePointer = useFinePointer();
   const [lensOn, setLensOn] = useState(false);
   const [origin, setOrigin] = useState("50% 50%");
@@ -38,7 +42,10 @@ export function ProductImageZoom({ src, alt, children }: Props) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-white shadow-sm">
+    <div
+      className={`relative overflow-hidden ${frameClassName ?? "rounded-2xl border bg-white shadow-sm"}`}
+      style={frameStyle}
+    >
       <div
         onMouseEnter={() => zoomable && setLensOn(true)}
         onMouseLeave={() => setLensOn(false)}
@@ -50,7 +57,7 @@ export function ProductImageZoom({ src, alt, children }: Props) {
           alt={alt}
           loading="lazy"
           draggable={false}
-          className="aspect-square w-full object-contain transition-transform duration-200 ease-out"
+          className={`w-full object-contain transition-transform duration-200 ease-out ${imgClassName ?? "aspect-square"}`}
           style={{
             transform: lensOn ? `scale(${LENS_SCALE})` : "scale(1)",
             transformOrigin: origin,

@@ -8,8 +8,7 @@ const THEME: Record<Variant, { cap: string; capDark: string; capLight: string; l
 };
 
 /**
- * Illustrated product vial, viewBox 130x310 (about 0.42 aspect, as in the reference where a
- * 130px-wide bottle shows ~285px above the card edge). Swap for product photography when ready.
+ * Illustrated product vial, viewBox 130x370 (about 0.35 aspect, matching the reference bottle photo). Swap for product photography when ready.
  * `id` keeps gradient ids unique when several vials are on the page.
  */
 export function ProductVial({
@@ -29,7 +28,7 @@ export function ProductVial({
   const long = words.some((w) => w.length > 10);
   const fs = long ? 13 : 17;
   return (
-    <svg viewBox="0 0 130 310" className={className} role="img" aria-label={`${label} vial`}>
+    <svg viewBox="0 0 130 370" className={className} role="img" aria-label={`${label} vial`}>
       <defs>
         <linearGradient id={`cap-${uid}`} x1="0" x2="1">
           <stop offset="0" stopColor={t.capDark} />
@@ -62,25 +61,25 @@ export function ProductVial({
       {/* collar */}
       <rect x="6" y="44" width="118" height="18" rx="4" fill={`url(#silver-${uid})`} />
       {/* glass body */}
-      <path d="M14 62h102v38c8 8 12 14 12 24v186H2V124c0-10 4-16 12-24z" fill={`url(#glass-${uid})`} />
+      <path d="M14 62h102v38c8 8 12 14 12 24v246H2V124c0-10 4-16 12-24z" fill={`url(#glass-${uid})`} />
       <rect x="22" y="68" width="86" height="28" rx="6" fill="#fff" opacity="0.35" />
       {/* white label */}
-      <rect x="2" y="136" width="126" height="62" fill="#fff" />
-      <text x="65" y="174" textAnchor="middle" fontSize="17" fontFamily="Outfit, sans-serif" fill="#111">
+      <rect x="2" y="168" width="126" height="64" fill="#fff" />
+      <text x="65" y="207" textAnchor="middle" fontSize="17" fontFamily="Outfit, sans-serif" fill="#111">
         <tspan fontWeight="700">obu.</tspan>
         <tspan fontWeight="300" fontSize="12">
           health
         </tspan>
       </text>
       {/* colored label */}
-      <rect x="2" y="198" width="126" height="112" fill={`url(#lab-${uid})`} />
+      <rect x="2" y="232" width="126" height="138" fill={`url(#lab-${uid})`} />
       {words.slice(0, 3).map((w, i) => (
-        <text key={i} x="14" y={230 + i * (fs + 3)} fontSize={fs} fontWeight="700" fill="#fff" fontFamily="Outfit, sans-serif">
+        <text key={i} x="14" y={264 + i * (fs + 4)} fontSize={fs} fontWeight="700" fill="#fff" fontFamily="Outfit, sans-serif">
           {w}
         </text>
       ))}
       {/* glass highlight */}
-      <rect x="12" y="112" width="9" height="190" rx="4" fill="#fff" opacity="0.3" />
+      <rect x="12" y="112" width="9" height="250" rx="4" fill="#fff" opacity="0.3" />
     </svg>
   );
 }

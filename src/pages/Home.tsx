@@ -209,7 +209,7 @@ function Cta({ to = START, children = "Get Started" }: { to?: string; children?:
     <span className="inline-flex items-center gap-2">
       <Link
         to={to}
-        className="inline-flex h-10 items-center rounded-full bg-[#0b0b0b] px-5 text-[15px] font-normal text-white transition hover:bg-black/75 md:h-11 md:px-6 min-[1500px]:text-[17px]"
+        className="inline-flex h-10 items-center rounded-full bg-[#0b0b0b] px-5 text-[15px] font-normal text-white transition hover:bg-black/75 md:h-11 md:px-6 md:text-[17px]"
       >
         {children}
       </Link>
@@ -225,43 +225,55 @@ function Cta({ to = START, children = "Get Started" }: { to?: string; children?:
 }
 
 /**
- * Bottle behaviour from the original: it rests tilted (about -19deg), slightly smaller and
- * sunk into the card; when the card is hovered it straightens, grows and rises.
- * The parent must have the `group` class and `overflow-hidden`.
+ * Bottle behaviour from the original. The parent must have the `group` class and `overflow-hidden`.
+ * - "hero": rests tilted (about -19deg), slightly smaller and sunk into the card; on hover it
+ *   straightens, grows and rises.
+ * - "card": rests big and tilted (about -20deg) in the bottom-right corner, bleeding off the edge;
+ *   on hover it swings upright into the centre of the card.
  */
 function TiltVial({
   p,
   className = "",
+  mode = "hero",
 }: {
   p: Product;
   className?: string;
+  mode?: "hero" | "card";
 }) {
+  const motionClass =
+    mode === "card"
+      ? "origin-center translate-x-[149%] translate-y-[57%] rotate-[-20deg] scale-[1.38] group-hover:translate-x-0 group-hover:translate-y-0 group-hover:rotate-0 group-hover:scale-100"
+      : "origin-bottom rotate-[-19deg] translate-y-[7%] scale-[.88] group-hover:translate-y-0 group-hover:rotate-0 group-hover:scale-100";
   return (
     <div
-      className={`pointer-events-none absolute origin-bottom rotate-[-19deg] translate-y-[14%] scale-[.88] transition-all duration-700 ${VIAL_EASE} group-hover:translate-y-0 group-hover:rotate-0 group-hover:scale-100 ${className}`}
+      className={`pointer-events-none absolute transition-all duration-700 ${VIAL_EASE} ${motionClass} ${className}`}
     >
-      <ProductVial id={p.id} variant={p.variant} label={p.label} className="block h-auto w-full drop-shadow-[0_18px_24px_rgba(0,0,0,.18)]" />
+      <ProductVial id={`${mode}-${p.id}`} variant={p.variant} label={p.label} className="block h-auto w-full drop-shadow-[0_18px_24px_rgba(0,0,0,.18)]" />
     </div>
   );
 }
+
+const CARD_H = "lg:aspect-auto lg:h-[clamp(32rem,62svh,40rem)]";
 
 function ProductCard({ p, bg }: { p: Product; bg: string }) {
   return (
     <motion.div
       {...rise}
-      className={`group relative flex aspect-[479/590] flex-col justify-between overflow-hidden ${RADIUS} ${PAD}`}
+      className={`group relative flex aspect-[479/590] flex-col justify-between overflow-hidden ${CARD_H} ${RADIUS} ${PAD}`}
       style={{ background: bg }}
     >
-      <div className="relative z-10">
-        <p className={`${SMALL} text-black/60`}>{p.name}</p>
-        <p className={`mt-1 max-w-[60%] ${SMALL} leading-snug text-black/75`}>{p.desc}</p>
+      <div className="relative z-10 font-body">
+        <p className="text-[clamp(.8rem,.95vw,1rem)] text-black/60">{p.name}</p>
+        <p className="mt-[0.5em] max-w-[82%] text-[clamp(.9rem,1.15vw,1.15rem)] font-normal leading-snug text-black">
+          {p.desc}
+        </p>
       </div>
-      <TiltVial p={p} className="bottom-[14%] left-1/2 w-[27%] -translate-x-1/2" />
-      <div className="relative z-10">
-        <p className={`${SMALL} text-black/55`}>Starting from</p>
-        <p className="mb-3 font-heading text-[clamp(1.5rem,1.7vw,2rem)] font-normal leading-tight">
+      <TiltVial mode="card" p={p} className="bottom-[26%] left-[36.5%] w-[27%]" />
+      <div className="relative z-10 font-body">
+        <p className="text-[clamp(.8rem,.95vw,1rem)] text-black/60">Starting From</p>
+        <p className="mb-[0.7em] mt-[0.2em] text-[clamp(1.4rem,2.1vw,2.4rem)] font-normal leading-tight">
           ${p.price}
-          <span className="text-[0.55em]">{p.per}</span>
+          {p.per}
         </p>
         <Cta to={`/product/${p.id}`}>Get Started</Cta>
       </div>
@@ -406,7 +418,7 @@ export default function Home() {
                 {c.title}
               </h2>
               <p className={`mt-[0.6em] ${BODY}`}>{c.sub}</p>
-              <TiltVial p={c.vial} className="-bottom-[4%] right-[9.5%] w-[25.8%]" />
+              <TiltVial p={c.vial} className="-bottom-[20%] right-[9.5%] w-[25.8%]" />
               <div className="absolute bottom-[clamp(1.25rem,1.7vw,2rem)] left-[clamp(1.25rem,1.7vw,2rem)]">
                 <Cta to={`/product/${c.vial.id}`}>Start Now</Cta>
               </div>
@@ -604,23 +616,32 @@ export default function Home() {
           <ProductCard p={PRODUCTS[3]} bg="linear-gradient(180deg,#f7efe5 0%,#f5d9b4 100%)" />
           <motion.div
             {...rise}
-            className={`relative flex min-h-[22rem] flex-col items-center overflow-hidden text-center md:col-span-2 lg:col-span-1 ${RADIUS} ${PAD}`}
-            style={{ background: "linear-gradient(180deg,#f4f4f4 0%,#f5dcb8 100%)" }}
+            className={`relative min-h-[26rem] overflow-hidden text-center md:col-span-2 lg:col-span-1 ${CARD_H} ${RADIUS} ${PAD}`}
+            style={{ background: "linear-gradient(160deg,#f3f3f3 0%,#f7e7d1 50%,#f8d6a4 100%)" }}
           >
-            <p className="font-heading text-[clamp(1.5rem,2.1vw,2.5rem)] font-light leading-snug">
-              {vitality}
-              <Caret />
-            </p>
-            <p className="font-heading text-[clamp(1.5rem,2.1vw,2.5rem)] font-light leading-snug">
-              We've got you covered
-            </p>
-            <div className="relative mt-4 flex w-full flex-1 items-center justify-center">
-              <Photo file="body.png" alt="" className="h-[70%] max-h-80 w-auto object-contain" />
-              <motion.div
+            <div className="relative z-10 font-heading text-[clamp(1.6rem,1.9vw+.8rem,2.9rem)] font-normal leading-[1.25] text-black">
+              <p>
+                {vitality}
+                <Caret />
+              </p>
+              <p>We've got you covered</p>
+            </div>
+
+            {/* Hologram body + glowing ring (the ring's front arc sits over the gap in the figure) */}
+            <div className="absolute bottom-0 left-1/2 aspect-[900/795] w-[75.6%] -translate-x-1/2">
+              <motion.span
                 aria-hidden
-                className="absolute h-[14%] w-[34%] rounded-[50%] border-4 border-white/90 shadow-[0_0_28px_rgba(255,255,255,.9)]"
-                animate={{ y: [-50, 50, -50], opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute left-[5.7%] top-[48.3%] z-0 h-[34.7%] w-[88%] rounded-[50%] border-[clamp(4px,.55vw,9px)] border-white/90 shadow-[0_0_22px_6px_rgba(255,255,255,.75)]"
+                animate={{ scale: [1, 1.035, 1], opacity: [0.85, 1, 0.85] }}
+                transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <Photo file="body.png" alt="" className="absolute inset-0 z-10 h-full w-full object-contain" />
+              <motion.span
+                aria-hidden
+                className="absolute left-[5.7%] top-[48.3%] z-20 h-[34.7%] w-[88%] rounded-[50%] border-[clamp(4px,.55vw,9px)] border-white shadow-[0_0_26px_10px_rgba(255,255,255,.9)]"
+                style={{ clipPath: "inset(52% -12% -30% -12%)" }}
+                animate={{ scale: [1, 1.035, 1], opacity: [0.9, 1, 0.9] }}
+                transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
               />
             </div>
           </motion.div>

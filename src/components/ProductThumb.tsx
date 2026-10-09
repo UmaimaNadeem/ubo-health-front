@@ -16,10 +16,10 @@ export function ProductThumb({ product }: { product: Product }) {
   const [imageFailed, setImageFailed] = useState(false);
 
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border bg-card transition hover:shadow-lg">
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-[1.25rem] bg-[#f6f3ee] transition duration-500 hover:-translate-y-1 hover:shadow-xl">
       <Link
         to={`/product/${product.slug}`}
-        className="relative block aspect-square overflow-hidden bg-white"
+        className="relative block aspect-square overflow-hidden bg-[#f6f3ee]"
       >
         {!product.image || imageFailed ? (
           <div className="grid h-full w-full place-items-center bg-secondary">
@@ -90,7 +90,7 @@ export function ProductThumb({ product }: { product: Product }) {
           <div className="mt-auto">
             <Link
               to="/contact"
-              className="block rounded-md border border-accent px-3 py-2 text-center text-xs font-semibold text-accent transition hover:bg-accent hover:text-accent-foreground"
+              className="block rounded-full border border-black px-3 py-2 text-center text-xs font-normal text-black transition hover:bg-black hover:text-white"
             >
               Notify me
             </Link>
@@ -111,14 +111,14 @@ export function ProductThumb({ product }: { product: Product }) {
             {product.outOfStock ? (
               <button
                 disabled
-                className="w-full cursor-not-allowed rounded-md border border-border bg-secondary px-3 py-2.5 text-sm font-bold text-muted-foreground"
+                className="w-full cursor-not-allowed rounded-full border border-border bg-secondary px-3 py-2.5 text-sm font-normal text-muted-foreground"
               >
                 Out of Stock
               </button>
             ) : (
               <Link
                 to={`/product/${product.slug}`}
-                className="block w-full cursor-pointer rounded-md bg-accent px-3 py-2.5 text-center text-sm font-bold text-accent-foreground shadow-md shadow-accent/30 transition hover:scale-[1.02] hover:shadow-accent/50"
+                className="block w-full cursor-pointer rounded-full bg-[#0b0b0b] px-3 py-2.5 text-center text-sm font-normal text-white transition hover:bg-black/75"
               >
                 View Details
               </Link>
