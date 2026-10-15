@@ -540,46 +540,53 @@ function MechanismDiagram({ color }: { color: string }) {
   );
 }
 
-/** Clickable pulsing hotspot. The active one is bigger and opens its callout card. */
+/** Blinking hotspot. Hover (or focus / tap) it to open its callout card. */
 function Hotspot({
   x,
   y,
   active,
-  onClick,
+  onActivate,
   label,
   delay = 0,
 }: {
   x: number;
   y: number;
   active: boolean;
-  onClick: () => void;
+  onActivate: () => void;
   label: string;
   delay?: number;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onMouseEnter={onActivate}
+      onFocus={onActivate}
+      onClick={onActivate}
       aria-label={label}
       aria-pressed={active}
-      className="absolute z-20 -translate-x-1/2 -translate-y-1/2 p-2"
+      className="group absolute z-20 -translate-x-1/2 -translate-y-1/2 cursor-pointer p-3 outline-none"
       style={{ left: `${x}%`, top: `${y}%` }}
     >
+      {/* expanding ripple rings */}
+      {[0, 1].map((k) => (
+        <motion.span
+          key={k}
+          aria-hidden
+          className="absolute left-1/2 top-1/2 h-[clamp(1.6rem,2.6vw,3.2rem)] w-[clamp(1.6rem,2.6vw,3.2rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/80 bg-white/25"
+          animate={{ scale: [0.5, 1.9], opacity: [0.85, 0] }}
+          transition={{ duration: 2.4, delay: delay + k * 1.2, repeat: Infinity, ease: "easeOut" }}
+        />
+      ))}
+      {/* the dot itself blinks */}
       <motion.span
         aria-hidden
-        className="absolute left-1/2 top-1/2 h-[clamp(1.4rem,2.2vw,2.6rem)] w-[clamp(1.4rem,2.2vw,2.6rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/45"
-        animate={{
-          scale: active ? [1.1, 1.7, 1.1] : [1, 1.35, 1],
-          opacity: active ? [0.8, 0.2, 0.8] : [0.5, 0.15, 0.5],
+        className="relative block rounded-full bg-white/90 shadow-[0_0_0_clamp(3px,.45vw,6px)_rgba(255,255,255,.35),0_0_18px_6px_rgba(255,255,255,.7)] transition-[width,height] duration-300 group-hover:scale-110"
+        style={{
+          width: active ? "clamp(1rem,1.5vw,1.9rem)" : "clamp(.8rem,1.15vw,1.5rem)",
+          height: active ? "clamp(1rem,1.5vw,1.9rem)" : "clamp(.8rem,1.15vw,1.5rem)",
         }}
-        transition={{ duration: 2.8, delay, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <span
-        className={`relative block rounded-full bg-white shadow-[0_0_0_3px_rgba(70,100,235,.6),0_0_14px_4px_rgba(255,255,255,.75)] transition-all ${
-          active
-            ? "h-[clamp(.8rem,1.1vw,1.3rem)] w-[clamp(.8rem,1.1vw,1.3rem)]"
-            : "h-[clamp(.55rem,.8vw,1rem)] w-[clamp(.55rem,.8vw,1rem)] opacity-80"
-        }`}
+        animate={{ opacity: [1, 0.35, 1] }}
+        transition={{ duration: 1.8, delay, repeat: Infinity, ease: "easeInOut" }}
       />
     </button>
   );
@@ -587,7 +594,7 @@ function Hotspot({
 
 function CalloutCard({ c }: { c: Callout }) {
   return (
-    <div className="w-[clamp(13rem,18vw,20rem)] rounded-[1.4rem] border border-white/70 bg-white/25 p-[clamp(1rem,1.3vw,1.5rem)] text-left shadow-[0_8px_30px_rgba(40,60,160,.12)] backdrop-blur-md">
+    <div className="w-[clamp(13rem,18vw,21rem)] rounded-[1.4rem] border border-white/70 bg-white/25 p-[clamp(1rem,1.3vw,1.5rem)] text-left shadow-[0_8px_30px_rgba(40,60,160,.14)] backdrop-blur-md">
       <p className="font-heading text-[clamp(1rem,1.2vw,1.4rem)] leading-snug text-black/65">
         {c.title}
       </p>
@@ -599,8 +606,8 @@ function CalloutCard({ c }: { c: Callout }) {
 }
 
 /**
- * Art with clickable hotspots. The active hotspot shows a glass callout card joined to the dot by a line.
- * Cycles automatically every few seconds (paused on hover). On phones the card sits under the art.
+ * Art with blinking hotspots. Hovering a hotspot fades in a glass callout card joined to the dot by a line that draws itself.
+ * With no hover it cycles on its own every few seconds. On phones the card sits under the art (tap a dot).
  * `aspect` must match the art's own aspect ratio so the hotspot percentages line up.
  */
 function CalloutStage({
@@ -636,14 +643,14 @@ function CalloutStage({
             x={c.x}
             y={c.y}
             active={i === active}
-            onClick={() => setActive(i)}
+            onActivate={() => setActive(i)}
             label={c.title}
-            delay={i * 0.5}
+            delay={i * 0.45}
           />
         ))}
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {cur && (
-            <div
+            <motion.div
               key={active}
               className="pointer-events-none absolute z-30 hidden -translate-y-1/2 md:block"
               style={
@@ -651,47 +658,101 @@ function CalloutStage({
                   ? { right: `${100 - cur.x}%`, top: `${cur.y}%` }
                   : { left: `${cur.x}%`, top: `${cur.y}%` }
               }
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.25 } }}
+              transition={{ duration: 0.45, ease: EASE }}
             >
-              <motion.div
-                initial={{ opacity: 0, x: cur.side === "left" ? 14 : -14 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, ease: EASE }}
+              <div
                 className={`flex items-center ${cur.side === "left" ? "flex-row-reverse" : "flex-row"}`}
               >
-                <span className="h-px w-[clamp(2rem,7vw,8rem)] bg-white/90" />
-                <CalloutCard c={cur} />
-              </motion.div>
-            </div>
+                <motion.span
+                  className="h-px w-[clamp(2rem,7vw,8rem)] bg-white/90"
+                  style={{ originX: cur.side === "left" ? 1 : 0 }}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.5, ease: EASE }}
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.94, x: cur.side === "left" ? 16 : -16 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  transition={{ duration: 0.55, delay: 0.12, ease: EASE }}
+                  style={{ transformOrigin: cur.side === "left" ? "right center" : "left center" }}
+                >
+                  <CalloutCard c={cur} />
+                </motion.div>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
-      {cur && (
-        <div className="mt-4 flex justify-center md:hidden" aria-live="polite">
-          <CalloutCard key={active} c={cur} />
-        </div>
-      )}
+      <div className="mt-4 min-h-[8.5rem] md:hidden" aria-live="polite">
+        <AnimatePresence mode="wait">
+          {cur && (
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: EASE }}
+              className="flex justify-center"
+            >
+              <CalloutCard c={cur} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
 
-/** Translucent body figure (public/obu/body.png, inverted so it glows on the blue banner). */
+/**
+ * Glowing x-ray body (public/obu/body.png). Tinted deep blue with a frosty highlight layer so it reads like the reference.
+ * Drop a finished render in as public/obu/body-glow.png (transparent PNG, same 900x795 framing) to override it.
+ */
 function BodyArt() {
+  const mask = {
+    WebkitMaskImage: "linear-gradient(#000 88%, transparent 100%)",
+    maskImage: "linear-gradient(#000 88%, transparent 100%)",
+  } as const;
   return (
-    <div
+    <motion.div
       className="absolute inset-0"
-      style={{
-        WebkitMaskImage: "linear-gradient(#000 78%, transparent 100%)",
-        maskImage: "linear-gradient(#000 78%, transparent 100%)",
-      }}
+      style={mask}
+      initial={{ opacity: 0, scale: 0.96, y: 30 }}
+      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 1.2, ease: EASE }}
     >
       <Photo
-        file="body.png"
+        file="body-glow.png"
         alt=""
-        className="h-full w-full object-contain [filter:invert(1)_brightness(1.25)_drop-shadow(0_0_18px_rgba(140,170,255,.65))]"
-        fallback={null}
+        className="h-full w-full object-contain"
+        fallback={
+          <>
+            <Photo
+              file="body.png"
+              alt=""
+              className="absolute inset-0 h-full w-full object-contain [filter:sepia(1)_hue-rotate(190deg)_saturate(6)_brightness(.62)_contrast(1.15)_drop-shadow(0_0_22px_rgba(120,160,255,.8))]"
+              fallback={null}
+            />
+            <Photo
+              file="body.png"
+              alt=""
+              className="absolute inset-0 h-full w-full object-contain opacity-60 mix-blend-screen [filter:invert(1)_brightness(1.5)_blur(.4px)]"
+              fallback={null}
+            />
+          </>
+        }
       />
-    </div>
+      {/* slow breathing glow over the chest */}
+      <motion.span
+        aria-hidden
+        className="absolute left-1/2 top-[44%] h-[34%] w-[34%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 blur-3xl"
+        animate={{ opacity: [0.25, 0.7, 0.25], scale: [0.9, 1.15, 0.9] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </motion.div>
   );
 }
 
@@ -858,20 +919,21 @@ function Mechanism({ t }: { t: Treatment }) {
   const m = t.mechanism;
   if (!m) return null;
   const items = m.callouts ?? [];
+  const body = m.kind === "body";
   return (
     <section className={WIDE}>
       <motion.div
         {...rise}
         className={`relative flex flex-col items-center overflow-hidden px-4 pt-[clamp(2rem,4.5vw,5.5rem)] text-center ${RADIUS} ${
-          m.kind === "body" ? "" : "pb-[clamp(1.5rem,4vw,5rem)]"
+          body ? "md:min-h-[clamp(40rem,66vw,66rem)]" : "pb-[clamp(1.5rem,4vw,5rem)]"
         }`}
         style={{ background: th.banner }}
       >
         <Eyebrow>{m.eyebrow}</Eyebrow>
         <h2 className={`${H2} mt-[0.6em] max-w-[14em]`}>{m.title}</h2>
-        <div className="mt-[clamp(1rem,2.5vw,3rem)] w-full">
-          {m.kind === "body" && (
-            <CalloutStage items={items} aspect="900 / 795" className="w-[clamp(18rem,40vw,46rem)]">
+        <div className={`mt-[clamp(1rem,2.5vw,3rem)] w-full ${body ? "mt-auto" : ""}`}>
+          {body && (
+            <CalloutStage items={items} aspect="900 / 795" className="w-[clamp(21rem,60vw,64rem)]">
               <BodyArt />
             </CalloutStage>
           )}
@@ -1280,30 +1342,156 @@ const STEPS = [
   },
 ];
 
-/** Step 1 art: a little checklist card, last row ticked. */
+/** Step 1: a checklist that scrolls upward forever; every third row gets ticked. */
 function ChecklistArt() {
+  const rows = [false, false, true, false, false, true]; // 2 identical periods => seamless loop at -50%
   return (
-    <div className="flex h-full w-full flex-col justify-center gap-[7%] px-[11%]">
-      {[0, 1, 2].map((r) => (
-        <div key={r} className="flex items-center gap-[6%]">
-          <span
-            className={`grid aspect-square w-[22%] shrink-0 place-items-center rounded-[28%] ${r === 2 ? "bg-black text-white" : "bg-white shadow-sm"}`}
+    <div
+      className="absolute inset-0 overflow-hidden rounded-[inherit]"
+      style={{
+        WebkitMaskImage: "linear-gradient(transparent 0%, #000 14%, #000 86%, transparent 100%)",
+        maskImage: "linear-gradient(transparent 0%, #000 14%, #000 86%, transparent 100%)",
+      }}
+    >
+      <motion.div
+        className="flex flex-col"
+        style={{ height: "200%" }}
+        animate={{ y: ["0%", "-50%"] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
+      >
+        {rows.map((on, r) => (
+          <div
+            key={r}
+            className="flex flex-1 items-center gap-[6%] border-b border-black/10 px-[11%]"
           >
-            {r === 2 && <Check className="h-[60%] w-[60%]" strokeWidth={3} />}
-          </span>
-          <span className="flex flex-1 flex-col gap-[14%]">
-            <span className="h-[6px] w-full rounded-full bg-white" />
-            <span className="h-[6px] w-4/5 rounded-full bg-white" />
-          </span>
-        </div>
-      ))}
+            <span
+              className={`grid aspect-square w-[22%] shrink-0 place-items-center rounded-[28%] ${
+                on ? "bg-black text-white" : "bg-white shadow-sm"
+              }`}
+            >
+              {on && (
+                <motion.span
+                  className="grid place-items-center"
+                  animate={{ scale: [0.6, 1.15, 1, 1, 0.6], opacity: [0, 1, 1, 1, 0] }}
+                  transition={{
+                    duration: 4.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: r > 2 ? 2.25 : 0,
+                  }}
+                >
+                  <Check className="h-[60%] w-[60%]" strokeWidth={3} />
+                </motion.span>
+              )}
+            </span>
+            <span className="flex flex-1 flex-col gap-[14%]">
+              <span className="h-[6px] w-full rounded-full bg-white" />
+              <span className="h-[6px] w-4/5 rounded-full bg-white" />
+            </span>
+          </div>
+        ))}
+      </motion.div>
     </div>
+  );
+}
+
+/** A vial in a glass bubble that drifts up and down. */
+function VialBubble({
+  variant,
+  left,
+  from,
+  to,
+  delay,
+}: {
+  variant: "gold" | "blue";
+  left: string;
+  from: string;
+  to: string;
+  delay: number;
+}) {
+  return (
+    <motion.span
+      aria-hidden
+      className="absolute z-20 grid aspect-square w-[27%] place-items-center rounded-full border border-white/70 bg-white/55 shadow-[0_6px_18px_rgba(60,120,140,.15)] backdrop-blur-sm"
+      style={{ left, marginLeft: "-13.5%" }}
+      initial={{ top: from }}
+      animate={{ top: [from, to, from], scale: [1, 1.08, 1] }}
+      transition={{ duration: 7, delay, repeat: Infinity, ease: "easeInOut" }}
+    >
+      <ProductVial id={`bubble-${variant}`} variant={variant} label="" className="h-[68%] w-auto" />
+    </motion.span>
+  );
+}
+
+/** Step 2: doctor floats gently while two vial bubbles drift past her. */
+function DoctorArt() {
+  return (
+    <>
+      <VialBubble variant="gold" left="21%" from="22%" to="58%" delay={0} />
+      <VialBubble variant="blue" left="84%" from="50%" to="16%" delay={0} />
+      <motion.span
+        className="absolute inset-x-0 bottom-0 z-10 mx-auto block h-[118%] w-full"
+        animate={{ y: [0, -5, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Photo
+          file="doctor.png"
+          alt="Licensed doctor"
+          className="absolute bottom-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 object-contain object-bottom"
+          fallback={
+            <span className="grid h-full w-full place-items-center">
+              <Stethoscope className="h-[30%] w-[30%] text-black/80" strokeWidth={1.2} />
+            </span>
+          }
+        />
+      </motion.span>
+    </>
+  );
+}
+
+/** Step 3: a bolt that pulses, with ripples spreading from it. */
+function BoltArt() {
+  return (
+    <span className="absolute inset-0 grid place-items-center">
+      {[0, 1].map((k) => (
+        <motion.span
+          key={k}
+          aria-hidden
+          className="absolute h-[40%] w-[40%] rounded-full border border-black/15"
+          animate={{ scale: [0.7, 2.2], opacity: [0.6, 0] }}
+          transition={{ duration: 3, delay: k * 1.5, repeat: Infinity, ease: "easeOut" }}
+        />
+      ))}
+      <motion.span
+        className="relative grid place-items-center"
+        animate={{ scale: [1, 1.16, 1], rotate: [0, -6, 0, 6, 0] }}
+        transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+        style={{ filter: "drop-shadow(0 6px 10px rgba(30,40,120,.25))" }}
+      >
+        <Zap
+          className="h-[2.6rem] w-[2.6rem] text-black md:h-[clamp(2.6rem,3.6vw,4.4rem)] md:w-[clamp(2.6rem,3.6vw,4.4rem)]"
+          fill="currentColor"
+          strokeWidth={0}
+        />
+      </motion.span>
+    </span>
   );
 }
 
 function Steps() {
   const tile =
     "relative aspect-[1.05] w-[clamp(9rem,13vw,16rem)] rounded-[clamp(1.25rem,1.6vw,1.9rem)]";
+  const tiles = [
+    <div key="a" className={`${tile} bg-gradient-to-br from-[#f1f1f1] to-[#f8eee2]`}>
+      <ChecklistArt />
+    </div>,
+    <div key="b" className={`${tile} bg-gradient-to-br from-[#e4f3f6] to-[#f3f8fa]`}>
+      <DoctorArt />
+    </div>,
+    <div key="c" className={`${tile} bg-gradient-to-br from-[#f1f1f1] to-[#e3e6fb]`}>
+      <BoltArt />
+    </div>,
+  ];
   return (
     <section
       className={`${NARROW} pb-[clamp(4rem,9vw,10rem)] pt-[clamp(4rem,8vw,9.5rem)] text-center`}
@@ -1316,38 +1504,14 @@ function Steps() {
         {STEPS.map((s, i) => (
           <motion.div
             key={s.title}
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease: EASE, delay: i * 0.15 }}
+            initial={{ opacity: 0, y: 50, scale: 0.94 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.9, ease: EASE, delay: i * 0.18 }}
+            whileHover={{ y: -6 }}
             className="flex flex-col items-center"
           >
-            {i === 0 && (
-              <div className={`${tile} bg-gradient-to-br from-[#f1f1f1] to-[#f8eee2]`}>
-                <ChecklistArt />
-              </div>
-            )}
-            {i === 1 && (
-              <div className={`${tile} bg-gradient-to-br from-[#e4f3f6] to-[#f3f8fa]`}>
-                <Photo
-                  file="doctor.png"
-                  alt="Licensed doctor"
-                  className="absolute inset-x-0 bottom-0 mx-auto h-[118%] w-auto max-w-none object-contain object-bottom"
-                  fallback={
-                    <span className="grid h-full w-full place-items-center">
-                      <Stethoscope className="h-[34%] w-[34%] text-black/80" strokeWidth={1.2} />
-                    </span>
-                  }
-                />
-              </div>
-            )}
-            {i === 2 && (
-              <div
-                className={`${tile} grid place-items-center bg-gradient-to-br from-[#f1f1f1] to-[#e3e6fb]`}
-              >
-                <Zap className="h-[34%] w-[34%] text-black" fill="currentColor" strokeWidth={0} />
-              </div>
-            )}
+            {tiles[i]}
             <h3 className="mt-[1.4em] max-w-[11em] font-heading text-[clamp(1.35rem,1.9vw,2.3rem)] font-normal leading-[1.15]">
               {s.title}
             </h3>
